@@ -12,10 +12,10 @@ def script_exit() -> None:
     raise ScriptExit()
 
 
-def _env_int_or_default(varname: str, default: int) -> int:
+def env_int_or_default(varname: str, default: int) -> int:
     if varname in _env:
         try:
-            return int(env[varname])
+            return int(_env[varname])
         except ValueError:
             print(f"[red]💢 [bold]${varname}[/bold] should be an INTEGER")
             raise ScriptExit()
@@ -23,7 +23,7 @@ def _env_int_or_default(varname: str, default: int) -> int:
         return default
 
 
-def _env_float_or_default(varname: str, default: float) -> float:
+def env_float_or_default(varname: str, default: float) -> float:
     if varname in _env:
         try:
             return float(_env[varname])

@@ -14,7 +14,12 @@ from xonsh.shell import transform_command
 from xonsh.shells.base_shell import BaseShell, Tee
 from xonsh.tools import XonshError, print_exception, uncapturable, unthreadable
 
-from unreasonably_long_core.util import ScriptExit, script_exit
+from unreasonably_long_core.util import (
+    ScriptExit,
+    env_float_or_default,
+    env_int_or_default,
+    script_exit,
+)
 
 uhu_aliases = ["huh", "uhu"]
 
@@ -154,7 +159,7 @@ def _generate_alias(command: HistoryEntry, is_renaming: bool) -> str:
     if is_renaming:
         blacklist.append(_last_created_alias)
 
-    max_tries = max(_env_int_or_default("XONSH_UHU_MAX_LLM_TRIES", 3), 1)
+    max_tries = max(env_int_or_default("XONSH_UHU_MAX_LLM_TRIES", 3), 1)
 
     for i in range(0, max_tries):
         alias = _prompt_ai_for_alias(command=command, blacklist=blacklist)
@@ -217,7 +222,7 @@ def _call_ai(
                     "system": system,
                     "options": {"temperature": temperature},
                 },
-                timeout=_env_float_or_default("XONSH_UHU_OLLAMA_TIMEOUT", 30.0),
+                timeout=env_float_or_default("XONSH_UHU_OLLAMA_TIMEOUT", 30.0),
             )
     except httpx.UnsupportedProtocol as e:
         print(f"[red]💢 {str(e).rstrip('.')}!")
