@@ -15,14 +15,11 @@ parser.add_argument(
     default=None,
     nargs="?",
 )
-#todo just re-use `shortcut`, this doesn't need to have any value
 parser.add_argument(
     "-c",
     "--clear",
     help="Clear all stored shortcuts, or a specific command if you specify the name",
-    nargs="?",
-    type=str,
-    const=True,
+    action="store_true",
     default=False,
 )
 parser.add_argument(
@@ -36,10 +33,11 @@ def _uhu(args: list[str]):
     try:
         if parsed_args.list:
             print("Not implemented yet")
-        elif parsed_args.clear is True:
-            _uhucore.clear()
-        elif isinstance(parsed_args.clear, str):
-            _uhucore.delete_shortcut(parsed_args.clear)
+        elif parsed_args.clear:
+            if parsed_args.shortcut:
+                _uhucore.delete_shortcut(parsed_args.shortcut)
+            else:
+                _uhucore.clear()
         else:
             _uhucore.alias_last_command(parsed_args.shortcut)
     except ScriptExit:
