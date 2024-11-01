@@ -1,3 +1,5 @@
+import ast
+import builtins
 import json
 import sys
 from shutil import which
@@ -8,17 +10,18 @@ from rich.console import Console
 from xonsh.built_ins import XSH
 from xonsh.codecache import run_compiled_code
 from xonsh.history.base import HistoryEntry
-from xonsh.shells.base_shell import BaseShell
-from xonsh.tools import XonshError, print_exception, unthreadable
+from xonsh.shell import transform_command
+from xonsh.shells.base_shell import BaseShell, Tee
+from xonsh.tools import XonshError, print_exception, uncapturable, unthreadable
 
 from unreasonably_long_core.util import ScriptExit, script_exit
 
-env = XSH.env
 uhu_aliases = ["huh", "uhu"]
 
-_stored_shortcuts: set[str] = set()
+_env = XSH.env
 _console = Console()
 _default_system_prompt = "You will generate a `shortname` for the provided xonsh command, which will be used as a convenient shortcut for it. Make the name memorable, but short. Do NOT use the command name for the `shortname`. Avoid using underscores, dashes and mixed case. Avoid making the alias an acronym. You may consider the `directory`, which is where the command was executed. Respond in JSON."
+_stored_shortcuts: set[str] = set()
 _last_created_alias: str | None = None
 
 
@@ -54,9 +57,9 @@ def _create_alias(name: str, command: HistoryEntry, is_renaming: bool) -> None:
     global _last_created_alias
 
     @unthreadable
-    def _alias(args: list[str]) -> None:
+    def _alias(args: list[str]) -> any:
         nonlocal command
-        _exec_alias(command, args)
+        return _exec_alias(command, args)
 
     XSH.aliases[name] = _alias
     _stored_shortcuts.add(name)
@@ -70,43 +73,59 @@ def _create_alias(name: str, command: HistoryEntry, is_renaming: bool) -> None:
     _last_created_alias = name
 
 
-def _exec_alias(command: HistoryEntry, args: list[str]) -> None:
+def _exec_alias(command: HistoryEntry, args: list[str]) -> any:
     # We want to execute the command with arguments and with the current context
     # (and not an isolated one without the variables/aliases defined in this one),
     # and also not affect the history, so we need to use shell internals.
     # See `base_shell.BaseShell.default` for reference.
     # This is a GLORIOUS STATE APPROVED HACK!!!
 
+    line = _build_line(command, args)
     shell: BaseShell = XSH.shell.shell
-
-    line = command.cmd.strip()
-
-    if args:
-        line += " " + " ".join(args).strip()
-
-    # Xonsh expects the line to end with a newline, make sure it does
-    line += "\n"
-
-    src, code = shell.push(line)
-
-    if code is None:
-        return
-
-    exc_info = run_compiled_code(code, shell.ctx, None, "single")
+    execer: Execer = shell.execer
 
     try:
-        if exc_info != (None, None, None):
-            raise exc_info[1]
+
+        def try_exec(line):
+            nonlocal shell
+            tree = execer.parse(line, set(dir(builtins)) | set(shell.ctx.keys()))
+
+            modes = {ast.Module: "exec", ast.Expression: "eval"}
+            code = compile(tree, "<uhu>", modes[type(tree)])
+
+            return eval(code, shell.ctx, None)
+
+        # Honestly, I have no idea how xonsh does this, so here is my shitty bootleg
+        try:
+            return try_exec(line)
+        except SyntaxError as e:
+            if e.msg == "None: no further code":
+                return try_exec(line + "\n")
+            else:
+                raise e
+
     except XonshError as e:
         print(e.args[0], file=sys.stderr)
     except (SystemExit, KeyboardInterrupt) as err:
         raise err
     except BaseException:
-        print_exception(exc_info=exc_info)
+        type_, value, traceback = sys.exc_info()
+        # strip off the current frame as the traceback should only show user code
+        traceback = traceback.tb_next
+
+        print_exception(exc_info=(type_, value, traceback))
     finally:
         # thank god this isn't java
         # noinspection PyProtectedMember
         shell._fix_cwd()
+
+
+def _build_line(command: HistoryEntry, args: list[str]) -> str:
+    line = command.cmd.strip()
+    if args:
+        line += " " + " ".join(args).strip()
+    line = transform_command(line + "\n").strip()
+    return line
 
 
 def _get_last_command() -> tuple[HistoryEntry, bool]:
@@ -159,7 +178,7 @@ def _is_new_alias_ok(alias: str) -> bool:
 
 
 def _prompt_ai_for_alias(*, command: HistoryEntry, blacklist: list[str]) -> str:
-    if env.get("XONSH_UHU_MODEL_NAME", None) is None:
+    if _env.get("XONSH_UHU_MODEL_NAME", None) is None:
         print("[red]💢 You haven't set [bold]$XONSH_UHU_MODEL_NAME[/bold] !")
         script_exit()
 
@@ -168,8 +187,8 @@ def _prompt_ai_for_alias(*, command: HistoryEntry, blacklist: list[str]) -> str:
     if blacklist:
         prompt["names_blacklist"] = blacklist
 
-    model = env.get("XONSH_UHU_MODEL_NAME")
-    system_prompt = env.get("XONSH_UHU_SYSTEM_PROMPT", _default_system_prompt)
+    model = _env.get("XONSH_UHU_MODEL_NAME")
+    system_prompt = _env.get("XONSH_UHU_SYSTEM_PROMPT", _default_system_prompt)
 
     result = _call_ai(
         model=model,
@@ -184,7 +203,7 @@ def _prompt_ai_for_alias(*, command: HistoryEntry, blacklist: list[str]) -> str:
 def _call_ai(
     model: str, prompt: str, system: str, temperature: float
 ) -> dict[str, str]:
-    ollama_url = httpx.URL(env.get("XONSH_UHU_OLLAMA_URL", "http://localhost:11434"))
+    ollama_url = httpx.URL(_env.get("XONSH_UHU_OLLAMA_URL", "http://localhost:11434"))
 
     try:
         with _console.status("Waiting for ollama"):
@@ -221,25 +240,3 @@ def _call_ai(
 
         api_data = json.loads(api_result.text)
         return json.loads(api_data["response"])
-
-
-def _env_int_or_default(varname: str, default: int) -> int:
-    if varname in env:
-        try:
-            return int(env[varname])
-        except ValueError:
-            print(f"[red]💢 [bold]${varname}[/bold] should be an INTEGER")
-            raise ScriptExit()
-    else:
-        return default
-
-
-def _env_float_or_default(varname: str, default: float) -> float:
-    if varname in env:
-        try:
-            return float(env[varname])
-        except ValueError:
-            print(f"[red]💢 [bold]${varname}[/bold] should be a NUMBER")
-            raise ScriptExit()
-    else:
-        return default

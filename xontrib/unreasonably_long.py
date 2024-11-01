@@ -9,13 +9,19 @@ from unreasonably_long_core.util import ScriptExit
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "shortcut", help="Manually specify a shortcut name", default=None, nargs="?"
+    "shortcut",
+    help="Manually specify a shortcut name",
+    type=str,
+    default=None,
+    nargs="?",
 )
+#todo just re-use `shortcut`, this doesn't need to have any value
 parser.add_argument(
     "-c",
     "--clear",
-    help="Clear all stored shortcuts",
+    help="Clear all stored shortcuts, or a specific command if you specify the name",
     nargs="?",
+    type=str,
     const=True,
     default=False,
 )
