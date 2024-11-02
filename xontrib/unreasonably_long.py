@@ -6,6 +6,8 @@ import unreasonably_long_core as _uhucore
 from unreasonably_long_core import uhu_aliases
 from unreasonably_long_core.util import ScriptExit
 
+__all__ = ()
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "shortcut",
