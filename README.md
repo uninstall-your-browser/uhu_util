@@ -50,7 +50,7 @@ xpip install xontrib-uhu
 # MANDATORY (if you want to use it with ollama)! Using a coder model will likely help. 7b is probably enough.
 $XONSH_UHU_MODEL_NAME = "qwen2.5-coder:7b"
 
-xontrib load unreasonably_long
+xontrib load uhu
 ```
 
 # limitations
