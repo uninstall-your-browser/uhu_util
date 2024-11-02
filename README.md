@@ -53,6 +53,10 @@ $XONSH_UHU_MODEL_NAME = "qwen2.5-coder:7b"
 xontrib load uhu
 ```
 
+# limitations
+
+Subprocess capture with uhu aliases doesn't work
+
 # what does uhu even mean
 
 > users hate unreasonablylongcommands
