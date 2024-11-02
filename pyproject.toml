@@ -4,11 +4,12 @@ packages = [
  { include = "xontrib" }
 ]
 name = "xontrib-uhu"
-version = "0.1.0"
-description = "AI-assisted command shortener"
+version = "0.1.0.post0"
+description = "Xonsh command shortener"
 authors = ["Your Name <you@example.com>"]
 license = "WTFPL"
 readme = "README.md"
+keywords = ["xontrib", "xonsh"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
