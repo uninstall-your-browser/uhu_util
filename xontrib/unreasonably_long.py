@@ -1,5 +1,4 @@
 import argparse
-from ast import parse
 
 from xonsh.built_ins import XSH
 

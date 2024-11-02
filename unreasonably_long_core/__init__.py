@@ -8,11 +8,12 @@ import httpx
 from rich import print
 from rich.console import Console
 from xonsh.built_ins import XSH
-from xonsh.codecache import run_compiled_code
+from xonsh.execer import Execer
 from xonsh.history.base import HistoryEntry
+from xonsh.procs.pipelines import HiddenCommandPipeline
 from xonsh.shell import transform_command
-from xonsh.shells.base_shell import BaseShell, Tee
-from xonsh.tools import XonshError, print_exception, uncapturable, unthreadable
+from xonsh.shells.base_shell import BaseShell
+from xonsh.tools import XonshError, print_exception, unthreadable
 
 from unreasonably_long_core.util import (
     ScriptExit,
@@ -64,7 +65,11 @@ def _create_alias(name: str, command: HistoryEntry, is_renaming: bool) -> None:
     @unthreadable
     def _alias(args: list[str]) -> any:
         nonlocal command
-        return _exec_alias(command, args)
+        res = _exec_alias(command, args)
+
+        # Subprocess commands already printed to console
+        if not isinstance(res, HiddenCommandPipeline):
+            return res
 
     XSH.aliases[name] = _alias
     _stored_shortcuts.add(name)
@@ -98,7 +103,7 @@ def _exec_alias(command: HistoryEntry, args: list[str]) -> any:
             modes = {ast.Module: "exec", ast.Expression: "eval"}
             code = compile(tree, "<uhu>", modes[type(tree)])
 
-            return eval(code, shell.ctx, None)
+            return eval(code, shell.ctx)
 
         # Honestly, I have no idea how xonsh does this, so here is my shitty bootleg
         try:
