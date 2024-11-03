@@ -1,5 +1,18 @@
 # uhu utility
 
+## generate a name using unpaid human labour
+
+```xsh
+@ buildsystem --build --clean --config ../config/custom/static/1.0.0/custom.yml -o test_build/ webapp/
+🔨 Doing some shit...
+😴 Wow that was hard
+@ uhu b
+✨ Last command shorened to 'b'
+@ b
+🔨 Doing some shit...
+😴 Wow that was hard
+```
+
 ## generate a name using unpaid robot labour
 
 ```xsh
@@ -13,17 +26,7 @@
 😴 Wow that was hard
 ```
 
-## generate a name using unpaid human labour
-
-```xsh
-@ buildsystem --build --clean --config ../config/custom/static/1.0.0/custom.yml -o test_build/ webapp/
-🔨 Doing some shit...
-😴 Wow that was hard
-@ uhu fuck
-✨ Last command shorened to 'fuck'
-```
-
-## humans will take ai jobs / renaming
+## rename an alias
 
 ```xsh
 @ buildsystem blah blah

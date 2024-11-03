@@ -4,12 +4,13 @@ packages = [
  { include = "xontrib" }
 ]
 name = "xontrib-uhu"
-version = "0.1.3"
+version = "0.1.3.post0"
 description = "Xonsh command shortener"
 authors = ["Your Name <you@example.com>"]
 license = "WTFPL"
 readme = "README.md"
 keywords = ["xontrib", "xonsh"]
+repository = "https://github.com/uninstall-your-browser/uhu_util"
 
 [tool.poetry.dependencies]
 python = "^3.10"
