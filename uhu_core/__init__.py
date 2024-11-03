@@ -15,7 +15,7 @@ from xonsh.shell import transform_command
 from xonsh.shells.base_shell import BaseShell
 from xonsh.tools import XonshError, print_exception, uncapturable, unthreadable
 
-from unreasonably_long_core.util import (
+from uhu_core.util import (
     ScriptExit,
     env_float_or_default,
     env_int_or_default,

@@ -2,9 +2,9 @@ import argparse
 
 from xonsh.built_ins import XSH
 
-import unreasonably_long_core as _uhucore
-from unreasonably_long_core import uhu_aliases
-from unreasonably_long_core.util import ScriptExit
+import uhu_core as _uhucore
+from uhu_core import uhu_aliases
+from uhu_core.util import ScriptExit
 
 __all__ = ()
 

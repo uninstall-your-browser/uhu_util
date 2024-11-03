@@ -1,6 +1,6 @@
 [tool.poetry]
 packages = [
- { include = "unreasonably_long_core" },
+ { include = "uhu_core" },
  { include = "xontrib" }
 ]
 name = "xontrib-uhu"
