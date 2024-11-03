@@ -13,7 +13,7 @@ from xonsh.history.base import HistoryEntry
 from xonsh.procs.pipelines import HiddenCommandPipeline
 from xonsh.shell import transform_command
 from xonsh.shells.base_shell import BaseShell
-from xonsh.tools import XonshError, print_exception, unthreadable
+from xonsh.tools import XonshError, print_exception, uncapturable, unthreadable
 
 from unreasonably_long_core.util import (
     ScriptExit,
@@ -63,6 +63,7 @@ def _create_alias(name: str, command: HistoryEntry, is_renaming: bool) -> None:
     global _last_created_alias
 
     @unthreadable
+    @uncapturable
     def _alias(args: list[str]) -> any:
         nonlocal command
         res = _exec_alias(command, args)
@@ -98,6 +99,7 @@ def _exec_alias(command: HistoryEntry, args: list[str]) -> any:
 
         def try_exec(line):
             nonlocal shell
+            # todo do I need to transform the line?
             tree = execer.parse(line, set(dir(builtins)) | set(shell.ctx.keys()))
 
             modes = {ast.Module: "exec", ast.Expression: "eval"}
